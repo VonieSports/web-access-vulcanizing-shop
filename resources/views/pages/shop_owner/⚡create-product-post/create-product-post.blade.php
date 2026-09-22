@@ -71,6 +71,8 @@
                             <input wire:model="newCategoryName" type="text" placeholder="New category name" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
                             <input wire:model="newCategoryDescription" type="text" placeholder="Optional description" class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100" />
                         </div>
+                        @error('newCategoryName') <span class="mt-2 block text-xs font-medium text-red-600">{{ $message }}</span> @enderror
+                        @error('newCategoryDescription') <span class="mt-2 block text-xs font-medium text-red-600">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="grid gap-4 sm:grid-cols-3">

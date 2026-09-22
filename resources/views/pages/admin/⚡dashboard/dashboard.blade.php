@@ -52,7 +52,9 @@
                         <h3 class="text-xl font-semibold text-slate-900">Tenant growth</h3>
                     </div>
                 </div>
-                <canvas id="tenantLineChart" class="h-48 w-full" height="180"></canvas>
+                <div class="relative h-56 w-full">
+                    <canvas id="tenantLineChart" class="h-full w-full" role="img" aria-label="Tenant registrations over the last seven months"></canvas>
+                </div>
             </article>
 
             <article class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -137,67 +139,93 @@
     document.addEventListener('DOMContentLoaded', function () {
         const lineCanvas = document.getElementById('tenantLineChart');
         if (lineCanvas) {
-            const ctx = lineCanvas.getContext('2d');
             const labels = @json($chartLabels);
-            const values = @json($lineSeries);
-            const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-            gradient.addColorStop(0, 'rgba(249, 115, 22, 0.35)');
-            gradient.addColorStop(1, 'rgba(249, 115, 22, 0.02)');
+            const values = @json($lineSeries).map(Number);
 
-            const width = lineCanvas.width;
-            const height = lineCanvas.height;
-            const padding = 24;
-            const max = Math.max(...values) + 5;
-            const min = 0;
+            const drawLineChart = () => {
+                const context = lineCanvas.getContext('2d');
+                const bounds = lineCanvas.getBoundingClientRect();
+                const width = Math.max(Math.floor(bounds.width), 1);
+                const height = Math.max(Math.floor(bounds.height), 1);
+                const pixelRatio = window.devicePixelRatio || 1;
 
-            ctx.clearRect(0, 0, width, height);
-            ctx.strokeStyle = '#e2e8f0';
-            ctx.lineWidth = 1;
+                lineCanvas.width = width * pixelRatio;
+                lineCanvas.height = height * pixelRatio;
+                context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+                context.clearRect(0, 0, width, height);
 
-            for (let i = 0; i <= 4; i++) {
-                const y = padding + ((height - padding * 2) / 4) * i;
-                ctx.beginPath();
-                ctx.moveTo(padding, y);
-                ctx.lineTo(width - padding, y);
-                ctx.stroke();
-            }
+                const padding = { top: 16, right: 18, bottom: 32, left: 32 };
+                const plotWidth = width - padding.left - padding.right;
+                const plotHeight = height - padding.top - padding.bottom;
+                const maxValue = Math.max(...values, 1);
+                const chartMax = Math.ceil(maxValue / 5) * 5 || 5;
+                const points = values.map((value, index) => ({
+                    x: padding.left + (plotWidth / Math.max(values.length - 1, 1)) * index,
+                    y: padding.top + plotHeight - (value / chartMax) * plotHeight,
+                    value,
+                }));
 
-            const points = values.map((value, index) => {
-                const x = padding + ((width - padding * 2) / (values.length - 1)) * index;
-                const y = height - padding - ((value - min) / (max - min || 1)) * (height - padding * 2);
-                return { x, y, value };
-            });
+                context.font = '12px sans-serif';
+                context.textAlign = 'right';
+                context.textBaseline = 'middle';
+                for (let index = 0; index <= 4; index++) {
+                    const y = padding.top + (plotHeight / 4) * index;
+                    const value = Math.round(chartMax - (chartMax / 4) * index);
+                    context.beginPath();
+                    context.moveTo(padding.left, y);
+                    context.lineTo(width - padding.right, y);
+                    context.strokeStyle = '#e2e8f0';
+                    context.lineWidth = 1;
+                    context.stroke();
+                    context.fillStyle = '#94a3b8';
+                    context.fillText(String(value), padding.left - 8, y);
+                }
 
-            ctx.beginPath();
-            ctx.moveTo(points[0].x, points[0].y);
-            points.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
-            ctx.lineWidth = 3;
-            ctx.strokeStyle = '#f97316';
-            ctx.stroke();
+                if (points.length) {
+                    const gradient = context.createLinearGradient(0, padding.top, 0, padding.top + plotHeight);
+                    gradient.addColorStop(0, 'rgba(249, 115, 22, 0.30)');
+                    gradient.addColorStop(1, 'rgba(249, 115, 22, 0.01)');
 
-            ctx.lineTo(points[points.length - 1].x, height - padding);
-            ctx.lineTo(points[0].x, height - padding);
-            ctx.closePath();
-            ctx.fillStyle = gradient;
-            ctx.fill();
+                    context.beginPath();
+                    context.moveTo(points[0].x, points[0].y);
+                    points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+                    context.lineTo(points[points.length - 1].x, padding.top + plotHeight);
+                    context.lineTo(points[0].x, padding.top + plotHeight);
+                    context.closePath();
+                    context.fillStyle = gradient;
+                    context.fill();
 
-            points.forEach((point) => {
-                ctx.beginPath();
-                ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
-                ctx.fillStyle = '#fff';
-                ctx.fill();
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = '#f97316';
-                ctx.stroke();
-            });
+                    context.beginPath();
+                    context.moveTo(points[0].x, points[0].y);
+                    points.slice(1).forEach((point) => context.lineTo(point.x, point.y));
+                    context.strokeStyle = '#f97316';
+                    context.lineWidth = 3;
+                    context.lineJoin = 'round';
+                    context.lineCap = 'round';
+                    context.stroke();
 
-            labels.forEach((label, index) => {
-                const x = padding + ((width - padding * 2) / (labels.length - 1)) * index;
-                ctx.fillStyle = '#64748b';
-                ctx.font = '12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(label, x, height - 8);
-            });
+                    points.forEach((point) => {
+                        context.beginPath();
+                        context.arc(point.x, point.y, 4, 0, Math.PI * 2);
+                        context.fillStyle = '#ffffff';
+                        context.fill();
+                        context.strokeStyle = '#f97316';
+                        context.lineWidth = 2;
+                        context.stroke();
+                    });
+                }
+
+                context.textAlign = 'center';
+                context.textBaseline = 'alphabetic';
+                labels.forEach((label, index) => {
+                    const x = padding.left + (plotWidth / Math.max(labels.length - 1, 1)) * index;
+                    context.fillStyle = '#64748b';
+                    context.fillText(label, x, height - 8);
+                });
+            };
+
+            drawLineChart();
+            new ResizeObserver(drawLineChart).observe(lineCanvas);
         }
 
         const donutCanvas = document.getElementById('tenantDonutChart');

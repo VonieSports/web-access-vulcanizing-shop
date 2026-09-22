@@ -2,7 +2,6 @@
 
 use App\Models\Tenant;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -29,8 +28,17 @@ new #[Layout('layouts.admin')] class extends Component
             ['label' => 'Rejected apps', 'value' => (string) $rejectedCount, 'delta' => '-1%', 'tone' => 'red'],
         ];
 
-        $this->chartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
-        $this->lineSeries = [12, 16, 21, 19, 28, 32, 38];
+        $firstMonth = now()->subMonths(6)->startOfMonth();
+        $months = collect(range(0, 6))->map(fn (int $offset) => $firstMonth->copy()->addMonths($offset));
+        $monthlyTenantCounts = Tenant::query()
+            ->whereBetween('created_at', [$firstMonth, now()->endOfMonth()])
+            ->get(['created_at'])
+            ->countBy(fn (Tenant $tenant) => $tenant->created_at?->format('Y-m'));
+
+        $this->chartLabels = $months->map(fn (Carbon $month) => $month->format('M'))->all();
+        $this->lineSeries = $months
+            ->map(fn (Carbon $month) => $monthlyTenantCounts->get($month->format('Y-m'), 0))
+            ->all();
         $this->donutSeries = [
             ['label' => 'Verified', 'value' => max($activeCount, 0), 'color' => '#ff7b2c', 'swatch' => 'bg-orange-500'],
             ['label' => 'Pending', 'value' => max($pendingCount, 0), 'color' => '#f8c86f', 'swatch' => 'bg-amber-400'],

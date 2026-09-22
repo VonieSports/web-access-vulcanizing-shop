@@ -4,8 +4,10 @@ use App\Models\Inventory;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Variant;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -95,20 +97,38 @@ new #[Layout('layouts.shop_owner')] class extends Component
         }
 
         $this->validate([
-            'newCategoryName' => ['nullable', 'string', 'min:2', 'max:255'],
+            'newCategoryName' => ['required', 'string', 'min:2', 'max:255'],
             'newCategoryDescription' => ['nullable', 'string', 'max:500'],
         ]);
 
-        if (trim($this->newCategoryName) === '') {
+        $categoryName = trim($this->newCategoryName);
+        $slug = Str::slug($categoryName) ?: 'category';
+
+        if (ProductCategory::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('slug', $slug)
+            ->exists()) {
+            $this->addError('newCategoryName', 'This category already exists.');
+
             return;
         }
 
-        $category = ProductCategory::create([
-            'tenant_id' => $tenant->id,
-            'name' => trim($this->newCategoryName),
-            'slug' => Str::slug(trim($this->newCategoryName)) ?: 'category',
-            'description' => trim($this->newCategoryDescription),
-        ]);
+        try {
+            $category = ProductCategory::create([
+                'tenant_id' => $tenant->id,
+                'name' => $categoryName,
+                'slug' => $slug,
+                'description' => trim($this->newCategoryDescription),
+            ]);
+        } catch (QueryException $exception) {
+            if ($exception->getCode() === '23000') {
+                $this->addError('newCategoryName', 'This category already exists.');
+
+                return;
+            }
+
+            throw $exception;
+        }
 
         $this->category_id = (string) $category->id;
         $this->newCategoryName = '';
@@ -128,7 +148,10 @@ new #[Layout('layouts.shop_owner')] class extends Component
         $this->validate([
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'category_id' => ['required', 'exists:product_categories,id'],
+            'category_id' => [
+                'required',
+                Rule::exists('product_categories', 'id')->where('tenant_id', $tenant->id),
+            ],
             'barcode' => ['nullable', 'string', 'max:100'],
             'stock' => ['nullable', 'integer', 'min:0'],
             'cost_price' => ['required', 'numeric', 'min:0'],

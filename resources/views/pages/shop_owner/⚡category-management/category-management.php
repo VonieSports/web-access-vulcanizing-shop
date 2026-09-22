@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ProductCategory;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -48,12 +49,34 @@ new #[Layout('layouts.shop_owner')] class extends Component
             'description' => ['nullable', 'string'],
         ]);
 
-        ProductCategory::create([
-            'tenant_id' => $tenant->id,
-            'name' => $this->name,
-            'slug' => Str::slug($this->name) ?: 'category',
-            'description' => $this->description,
-        ]);
+        $categoryName = trim($this->name);
+        $slug = Str::slug($categoryName) ?: 'category';
+
+        if (ProductCategory::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('slug', $slug)
+            ->exists()) {
+            $this->addError('name', 'This category already exists for your shop.');
+
+            return;
+        }
+
+        try {
+            ProductCategory::create([
+                'tenant_id' => $tenant->id,
+                'name' => $categoryName,
+                'slug' => $slug,
+                'description' => trim($this->description),
+            ]);
+        } catch (QueryException $exception) {
+            if ($exception->getCode() === '23000') {
+                $this->addError('name', 'This category already exists for your shop.');
+
+                return;
+            }
+
+            throw $exception;
+        }
 
         $this->reset(['name', 'description']);
         $this->loadCategories();

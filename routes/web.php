@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::livewire('/', 'pages::public.index')->name('index.page');
@@ -8,6 +9,7 @@ Route::livewire('/register', 'pages::auth.register')->name('register');
 Route::livewire('/owner/login', 'pages::auth.shop_owner_auth.login')->name('owner.login');
 Route::livewire('/owner/register', 'pages::auth.shop_owner_auth.register')->name('owner.register');
 Route::livewire('/admin/login', 'pages::auth.admin_auth.login')->name('admin.login');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::prefix('customer')->middleware(['customer'])->group(function () {
     Route::livewire('/dashboard', 'pages::customer.dashboard')->name('customer.dashboard');
@@ -31,7 +33,6 @@ Route::middleware(['auth', 'owner'])->prefix('owner')->group(function () {
     Route::livewire('/categories', 'pages::shop_owner.category-management')->name('owner.categories');
     Route::livewire('/inventory', 'pages::shop_owner.inventory-management')->name('owner.inventory');
 });
-
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::livewire('/dashboard', 'pages::admin.dashboard')->name('admin.dashboard');

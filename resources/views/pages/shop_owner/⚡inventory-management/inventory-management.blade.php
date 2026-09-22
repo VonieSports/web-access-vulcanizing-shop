@@ -1,119 +1,202 @@
-
-<div class="space-y-6">
-    <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <p class="mb-2 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500">Stock control</p>
-            <h1 class="text-3xl font-bold tracking-tight text-slate-900">Inventory management</h1>
-        </div>
-
-        <a href="{{ route('owner.products') }}" class="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-            View product posts
-        </a>
-    </div>
-
-    @if (session('success'))
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-            {{ session('success') }}
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-            {{ session('error') }}
-        </div>
-    @endif
-
-    <div class="grid gap-6 xl:grid-cols-[0.9fr_1.4fr]">
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <h2 class="mb-4 text-lg font-semibold text-slate-900">Adjust stock</h2>
-
-            <form wire:submit="addStock" class="space-y-4">
-                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <div class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-slate-500">Selected product</div>
-                    @if (! empty($products))
-                        <div class="flex flex-wrap gap-2">
-                            @foreach($products as $product)
-                                <button type="button" wire:click="selectProduct({{ $product['id'] }})" class="rounded-full border px-3 py-1.5 text-xs font-semibold {{ $product_id === $product['id'] ? 'border-orange-200 bg-orange-100 text-orange-700' : 'border-slate-200 bg-white text-slate-600' }}">
-                                    {{ $product['name'] }}
-                                </button>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="text-sm text-slate-500">No products available yet.</div>
-                    @endif
-                    @error('product_id') <span class="mt-2 block text-xs font-medium text-red-600">{{ $message }}</span> @enderror
+<div class="min-h-screen ">
+    <div class="mx-auto overflow-hidden rounded-lg border border-slate-200 bg-white ">
+            <main class=" p-4 sm:p-6">
+                <div class="mb-6 flex flex-col gap-4 border-b border-slate-200 bg-white/50 px-2 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                
+                    <div class="flex items-center gap-3">
+                        <button class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700">⎋</button>
+                        <button class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700">◌</button>
+                        <button class="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700">⇩</button>
+                    </div>
                 </div>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Type</label>
-                    <select wire:model="type" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100">
-                        <option value="stock_in">Stock in</option>
-                        <option value="stock_out">Stock out</option>
-                        <option value="adjustment">Adjustment</option>
-                    </select>
-                    @error('type') <span class="mt-2 block text-xs font-medium text-red-600">{{ $message }}</span> @enderror
-                </div>
+                @if (empty($kpis))
+                    <div class="rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+                        No business data is available yet. Complete the business setup to populate dashboard metrics.
+                    </div>
+                @else
+                    <section class="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        @foreach($kpis as $kpi)
+                            <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <div class="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                                    <span>{{ $kpi['label'] }}</span>
+                                    <span class="rounded-full bg-emerald-100 px-2 py-1 text-[9px] text-emerald-700">{{ $kpi['delta'] }}</span>
+                                </div>
+                                <div class="text-3xl font-bold text-slate-900">{{ $kpi['value'] }}</div>
+                            </div>
+                        @endforeach
+                    </section>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Quantity</label>
-                    <input wire:model="quantity" type="number" min="1" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100" />
-                    @error('quantity') <span class="mt-2 block text-xs font-medium text-red-600">{{ $message }}</span> @enderror
-                </div>
+                    <section class="mb-6 grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
+                        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex items-center justify-between">
+                                <h2 class="text-lg font-semibold text-slate-900">Inventory movement</h2>
+                                <div class="flex items-center gap-2 text-xs text-slate-500">
+                                    <span class="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+                                    Activity
+                                </div>
+                            </div>
+                            <canvas id="ownerLineChart" class="h-52 w-full"></canvas>
+                        </article>
 
-                <div>
-                    <label class="mb-2 block text-sm font-medium text-slate-700">Remarks</label>
-                    <textarea wire:model="remarks" rows="3" class="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100" placeholder="Optional notes"></textarea>
-                    @error('remarks') <span class="mt-2 block text-xs font-medium text-red-600">{{ $message }}</span> @enderror
-                </div>
-
-                <button type="submit" class="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-200 transition hover:from-orange-600 hover:to-orange-500">
-                    Save inventory
-                </button>
-            </form>
-        </div>
-
-        <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <div class="mb-4 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-slate-900">Recent inventory</h2>
-                <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-600">{{ count($inventory) }}</span>
-            </div>
-
-            <div class="overflow-hidden rounded-2xl border border-slate-200">
-                <table class="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-700">
-                    <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-500">
-                        <tr>
-                            <th class="px-4 py-3">Product</th>
-                            <th class="px-4 py-3">Type</th>
-                            <th class="px-4 py-3">Qty</th>
-                            <th class="px-4 py-3">Stock</th>
-                            <th class="px-4 py-3">Updated</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-200 bg-white">
-                        @forelse ($inventory as $entry)
-                            <tr class="align-middle">
-                                <td class="px-4 py-3">
-                                    <div class="flex items-center gap-3">
-                                        <img src="{{ $entry['product_image'] }}" alt="{{ $entry['product_name'] }}" class="h-11 w-11 rounded-xl object-cover" />
-                                        <div>
-                                            <div class="font-semibold text-slate-900">{{ $entry['product_name'] }}</div>
-                                            <div class="text-xs text-slate-500">{{ $entry['price'] ? '$' . number_format($entry['price'], 2) : '—' }}</div>
+                        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                            <div class="mb-4 flex items-center justify-between">
+                                <h2 class="text-lg font-semibold text-slate-900">Stock status</h2>
+                            </div>
+                            <div class="flex flex-col items-center justify-center gap-3">
+                                <canvas id="ownerDonutChart" width="190" height="190"></canvas>
+                                <div class="w-full space-y-2">
+                                    @foreach($donutSeries as $segment)
+                                        <div class="flex items-center justify-between text-sm text-slate-600">
+                                            <div class="flex items-center gap-2">
+                                                <span class="inline-block h-2.5 w-2.5 rounded-full" style="background: {{ $segment['color'] }}"></span>
+                                                {{ $segment['label'] }}
+                                            </div>
+                                            <span class="font-semibold text-slate-800">{{ $segment['value'] }}</span>
                                         </div>
-                                    </div>
-                                </td>
-                                <td class="px-4 py-3 uppercase tracking-[0.12em] text-slate-500">{{ $entry['type'] }}</td>
-                                <td class="px-4 py-3 font-semibold text-slate-900">{{ $entry['quantity'] }}</td>
-                                <td class="px-4 py-3 font-semibold text-slate-900">{{ $entry['stock'] }}</td>
-                                <td class="px-4 py-3 text-slate-500">{{ $entry['created_at'] ?? '—' }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="px-4 py-10 text-center text-sm text-slate-500">No inventory activity yet.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </article>
+                    </section>
+
+                    <section class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div class="mb-4 flex items-center justify-between">
+                            <h2 class="text-lg font-semibold text-slate-900">Recent inventory log</h2>
+                            <a href="{{ route('owner.inventory') }}" class="text-sm font-medium text-slate-600 hover:text-slate-900">View all</a>
+                        </div>
+
+                        <div class="overflow-hidden rounded-2xl border border-slate-200">
+                            <table class="min-w-full divide-y divide-slate-200 text-left text-sm text-slate-700">
+                                <thead class="bg-slate-50 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                                    <tr>
+                                        <th class="px-4 py-3">Product</th>
+                                        <th class="px-4 py-3">Type</th>
+                                        <th class="px-4 py-3">Qty</th>
+                                        <th class="px-4 py-3">Stock</th>
+                                        <th class="px-4 py-3">Updated</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 bg-white">
+                                    @forelse($tableRows as $row)
+                                        <tr>
+                                            <td class="px-4 py-3 font-medium text-slate-800">{{ $row['product'] }}</td>
+                                            <td class="px-4 py-3 text-slate-600">{{ $row['type'] }}</td>
+                                            <td class="px-4 py-3 font-semibold text-slate-900">{{ $row['quantity'] }}</td>
+                                            <td class="px-4 py-3 font-semibold text-slate-900">{{ $row['stock'] }}</td>
+                                            <td class="px-4 py-3 text-slate-500">{{ $row['updated'] }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="5" class="px-4 py-8 text-center text-sm text-slate-500">No recent inventory activity yet.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                @endif
+            </main>
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const lineCanvas = document.getElementById('ownerLineChart');
+        if (lineCanvas) {
+            const ctx = lineCanvas.getContext('2d');
+            const labels = @json($chartLabels);
+            const values = @json($lineSeries);
+
+            if (labels.length && values.length) {
+                const w = lineCanvas.width = lineCanvas.clientWidth;
+                const h = lineCanvas.height = 220;
+                const padding = 22;
+                const max = Math.max(...values, 1);
+                const min = 0;
+
+                ctx.clearRect(0, 0, w, h);
+                ctx.strokeStyle = '#dfe7e7';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 4; i++) {
+                    const y = padding + ((h - padding * 2) / 4) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(padding, y);
+                    ctx.lineTo(w - padding, y);
+                    ctx.stroke();
+                }
+
+                const points = values.map((value, index) => {
+                    const x = padding + ((w - padding * 2) / Math.max(values.length - 1, 1)) * index;
+                    const y = h - padding - ((value - min) / Math.max(max - min, 1)) * (h - padding * 2);
+                    return { x, y, value };
+                });
+
+                const gradient = ctx.createLinearGradient(0, 0, 0, h);
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+
+                ctx.beginPath();
+                ctx.moveTo(points[0].x, points[0].y);
+                points.slice(1).forEach((point) => ctx.lineTo(point.x, point.y));
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#10b981';
+                ctx.stroke();
+
+                ctx.lineTo(points[points.length - 1].x, h - padding);
+                ctx.lineTo(points[0].x, h - padding);
+                ctx.closePath();
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                points.forEach((point) => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#10b981';
+                    ctx.fill();
+                });
+
+                labels.forEach((label, index) => {
+                    const x = padding + ((w - padding * 2) / Math.max(labels.length - 1, 1)) * index;
+                    ctx.fillStyle = '#64748b';
+                    ctx.font = '11px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(label, x, h - 8);
+                });
+            }
+        }
+
+        const donutCanvas = document.getElementById('ownerDonutChart');
+        if (donutCanvas) {
+            const ctx = donutCanvas.getContext('2d');
+            const data = @json($donutSeries);
+            const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0) || 1;
+            const centerX = donutCanvas.width / 2;
+            const centerY = donutCanvas.height / 2;
+            const radius = 62;
+            let currentAngle = -Math.PI / 2;
+
+            data.forEach((item) => {
+                const slice = (Number(item.value || 0) / total) * Math.PI * 2;
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + slice);
+                ctx.closePath();
+                ctx.fillStyle = item.color;
+                ctx.fill();
+                currentAngle += slice;
+            });
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 36, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fill();
+
+            ctx.fillStyle = '#0f172a';
+            ctx.textAlign = 'center';
+            ctx.font = '700 18px sans-serif';
+            ctx.fillText(String(total), centerX, centerY + 6);
+        }
+    });
+</script>
