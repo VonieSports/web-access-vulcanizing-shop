@@ -11,12 +11,32 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable([
+    'name',
+    'gender',
+    'birth_date',
+    'email',
+    'phone',
+    'address',
+    'avatar',
+    'cover_photo',
+    'is_active',
+    'last_login_at',
+    'last_logout_at',
+    'email_verified_at',
+    'password',
+    'remember_token',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasRoles;
+
+    public function tenant()
+    {
+        return $this->hasOne(Tenant::class);
+    }
 
     /**
      * Get the attributes that should be cast.
